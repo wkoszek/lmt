@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+import sys
+import json
+import time
+import datetime
+import argparse
+import re
+from openai import OpenAI
+from anthropic import Anthropic
+import google.generativeai as genai
+
+# Initialize API clients
+openai_client = OpenAI()
+anthropic_client = Anthropic()
+genai.configure()
+
+def call_openai_model(prompt, model):
+    """Calls OpenAI API with the given prompt and model."""
+    start_time = time.time()
+    response = openai_client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    output_text = response.choices[0].message.content
+    end_time = time.time()
+    return output_text, start_time, end_time
+
+def call_anthropic_model(prompt, model):
+    """Calls Anthropic API with the given prompt and model."""
+    start_time = time.time()
+    response = anthropic_client.messages.create(
+        model=model,
+        max_tokens=4096,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    output_text = response.content[0].text
+    end_time = time.time()
+    return output_text, start_time, end_time
+
+def call_gemini_model(prompt, model):
+    """Calls Google's Gemini API with the given prompt and model."""
+    start_time = time.time()
+    model = genai.GenerativeModel(model)
+    response = model.generate_content(prompt)
+    output_text = response.text
+    end_time = time.time()
+    return output_text, start_time, end_time
+
+def determine_backend(model):
+    """Determine which backend to use based on the model name."""
+    # OpenAI models
+    if re.match(r'gpt-', model):
+        return call_openai_model
+    # Anthropic models
+    elif re.match(r'claude-', model):
+        return call_anthropic_model
+    # Google models
+    elif re.match(r'gemini-', model):
+        return call_gemini_model
+    else:
+        return None
+
+def main():
+    parser = argparse.ArgumentParser(description="Unified Language Model CLI")
+    parser.add_argument("model", type=str, help="Model to use (e.g., gpt-4, claude-3-opus-20240229, gemini-pro)")
+    args = parser.parse_args()
+
+    # Determine which backend to use
+    backend_func = determine_backend(args.model)
+    if not backend_func:
+        print(f"Error: Unknown model '{args.model}'. Please use a model from OpenAI (gpt-*), Anthropic (claude-*), or Google (gemini-*).", file=sys.stderr)
+        sys.exit(1)
+
+    # Read input from stdin
+    prompt = sys.stdin.read().strip()
+    if not prompt:
+        print("Error: No input provided on STDIN.", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        # Call the appropriate model
+        output, time_sent_at, time_recv_at = backend_func(prompt, args.model)
+
+        # Print output to STDOUT
+        print(output)
+
+        # Generate log filename
+        timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        log_filename = f"{timestamp}-{args.model}.json"
+
+        # Log data
+        log_data = {
+            "in": {
+                "time_sent_at": time_sent_at,
+                "prompt": prompt,
+                "algo": args.model
+            },
+            "out": {
+                "time_recv_at": time_recv_at,
+                "output": output,
+                "algo": args.model
+            }
+        }
+
+        with open(log_filename, "w") as log_file:
+            json.dump(log_data, log_file, indent=4)
+
+    except Exception as e:
+        print(f"Error: {str(e)}", file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main() 
