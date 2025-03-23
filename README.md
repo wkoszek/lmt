@@ -1,4 +1,4 @@
-# LMT (Language Model Tool)
+# LMT (Language Model Tool CLI)
 
 A unified command-line interface for interacting with various language models from OpenAI, Anthropic, and Google. 
 This tool provides a simple way to send prompts to different LLM providers and automatically logs all interactions.
