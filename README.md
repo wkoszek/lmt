@@ -67,40 +67,18 @@ echo "Your prompt here" | ./lmt-gpt-4
 
 ### Examples
 
-1. Using OpenAI's GPT-4:
 ```bash
-# Using base command
+# OpenAI GPT-4
 echo "What is the capital of France?" | ./lmt gpt-4
 
-# Using symlink (if created)
-echo "What is the capital of France?" | ./lmt-gpt-4
-```
-
-2. Using Anthropic's Claude:
-```bash
-# Using base command
+# Anthropic Claude
 echo "Write a Python function to calculate fibonacci numbers" | ./lmt claude-3-opus-20240229
 
-# Using symlink (if created)
-echo "Write a Python function to calculate fibonacci numbers" | ./lmt-claude-3-opus-20240229
-```
-
-3. Using Google's Gemini:
-```bash
-# Using base command
+# Google Gemini
 echo "Explain quantum computing in simple terms" | ./lmt gemini-pro
 
-# Using symlink (if created)
-echo "Explain quantum computing in simple terms" | ./lmt-gemini-pro
-```
-
-4. Using Grok XAI:
-```bash
-# Using base command
+# Grok XAI
 echo "What are the latest developments in AI?" | ./lmt grok-1
-
-# Using symlink (if created)
-echo "What are the latest developments in AI?" | ./lmt-grok-1
 ```
 
 ### Supported Model Names

@@ -2,6 +2,9 @@
 # vim: set ft=python sts=4 ts=4 sw=4 et:
 # BSD 2-clause license. Author: Adam Wojciech Koszek <adam@koszek.com>
 
+# @todo: we should unify the interface for all the models so
+# that we use the same OpenAI interface for all the models.
+
 import sys
 import json
 import time
