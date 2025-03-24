@@ -13,6 +13,7 @@ This tool provides a simple way to send prompts to different LLM providers and a
 - JSON logging of all interactions with timestamps
 - Simple stdin/stdout interface
 - Error handling and user-friendly messages
+- Convenient symlink-based model selection
 
 ## Prerequisites
 
@@ -39,29 +40,54 @@ This tool provides a simple way to send prompts to different LLM providers and a
    export ANTHROPIC_API_KEY='your-anthropic-key'
    export GOOGLE_API_KEY='your-google-key'
    ```
+5. (Optional) Create symlinks for frequently used models:
+   ```bash
+   ln -s lmt lmt-gpt-4
+   ln -s lmt lmt-claude-3-opus-20240229
+   ln -s lmt lmt-gemini-pro
+   ```
 
 ## Usage
 
-The basic syntax is:
+The tool can be used in two ways:
+
+### 1. Using the base command with model argument:
 ```bash
 echo "Your prompt here" | ./lmt <model-name>
+```
+
+### 2. Using symlinks (if created):
+```bash
+echo "Your prompt here" | ./lmt-gpt-4
 ```
 
 ### Examples
 
 1. Using OpenAI's GPT-4:
 ```bash
+# Using base command
 echo "What is the capital of France?" | ./lmt gpt-4
+
+# Using symlink (if created)
+echo "What is the capital of France?" | ./lmt-gpt-4
 ```
 
 2. Using Anthropic's Claude:
 ```bash
+# Using base command
 echo "Write a Python function to calculate fibonacci numbers" | ./lmt claude-3-opus-20240229
+
+# Using symlink (if created)
+echo "Write a Python function to calculate fibonacci numbers" | ./lmt-claude-3-opus-20240229
 ```
 
 3. Using Google's Gemini:
 ```bash
+# Using base command
 echo "Explain quantum computing in simple terms" | ./lmt gemini-pro
+
+# Using symlink (if created)
+echo "Explain quantum computing in simple terms" | ./lmt-gemini-pro
 ```
 
 ### Supported Model Names
@@ -77,7 +103,6 @@ The tool outputs the model's response to stdout and creates a JSON log file with
 - Output response
 - Timestamps for request and response
 - Model used
-
 
 ## Copyright
 

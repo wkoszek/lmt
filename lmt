@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
+# vim: set ft=python sts=4 ts=4 sw=4 et:
+# BSD 2-clause license. Author: Adam Wojciech Koszek <adam@koszek.com>
+
 import sys
 import json
 import time
 import datetime
 import argparse
 import re
+import os
 from openai import OpenAI
 from anthropic import Anthropic
 import google.generativeai as genai
@@ -62,13 +66,26 @@ def determine_backend(model):
 
 def main():
     parser = argparse.ArgumentParser(description="Unified Language Model CLI")
-    parser.add_argument("model", type=str, help="Model to use (e.g., gpt-4, claude-3-opus-20240229, gemini-pro)")
+    parser.add_argument("model", type=str, nargs="?", help="Model to use (e.g., gpt-4, claude-3-opus-20240229, gemini-pro)")
     args = parser.parse_args()
 
+    # Get the program's basename
+    program_name = os.path.basename(sys.argv[0])
+    
+    # If program name is not "lmt", use it as the model name (removing "lmt-" prefix)
+    if program_name != "lmt":
+        model = program_name.replace("lmt-", "")
+    else:
+        # If program name is "lmt", require the model argument
+        if not args.model:
+            print("Error: Model name must be provided when using 'lmt' command.", file=sys.stderr)
+            sys.exit(1)
+        model = args.model
+
     # Determine which backend to use
-    backend_func = determine_backend(args.model)
+    backend_func = determine_backend(model)
     if not backend_func:
-        print(f"Error: Unknown model '{args.model}'. Please use a model from OpenAI (gpt-*), Anthropic (claude-*), or Google (gemini-*).", file=sys.stderr)
+        print(f"Error: Unknown model '{model}'. Please use a model from OpenAI (gpt-*), Anthropic (claude-*), or Google (gemini-*).", file=sys.stderr)
         sys.exit(1)
 
     # Read input from stdin
@@ -79,26 +96,26 @@ def main():
 
     try:
         # Call the appropriate model
-        output, time_sent_at, time_recv_at = backend_func(prompt, args.model)
+        output, time_sent_at, time_recv_at = backend_func(prompt, model)
 
         # Print output to STDOUT
         print(output)
 
         # Generate log filename
         timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        log_filename = f"{timestamp}-{args.model}.json"
+        log_filename = f"{timestamp}-{model}.json"
 
         # Log data
         log_data = {
             "in": {
                 "time_sent_at": time_sent_at,
                 "prompt": prompt,
-                "algo": args.model
+                "algo": model
             },
             "out": {
                 "time_recv_at": time_recv_at,
                 "output": output,
-                "algo": args.model
+                "algo": model
             }
         }
 
