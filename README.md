@@ -1,6 +1,6 @@
 # LMT (Language Model Tool CLI)
 
-A unified command-line interface for interacting with various language models from OpenAI, Anthropic, and Google. 
+A unified command-line interface for interacting with various language models from OpenAI, Anthropic, Google, and Grok XAI. 
 This tool provides a simple way to send prompts to different LLM providers and automatically logs all interactions.
 
 ## Features
@@ -9,6 +9,7 @@ This tool provides a simple way to send prompts to different LLM providers and a
   - OpenAI (GPT models)
   - Anthropic (Claude models)
   - Google (Gemini models)
+  - Grok XAI (Grok models, via OpenAI-compatible API)
 - Automatic model detection based on model name
 - JSON logging of all interactions with timestamps
 - Simple stdin/stdout interface
@@ -22,6 +23,7 @@ This tool provides a simple way to send prompts to different LLM providers and a
   - OpenAI API key (set as `OPENAI_API_KEY` environment variable)
   - Anthropic API key (set as `ANTHROPIC_API_KEY` environment variable)
   - Google API key (set as `GOOGLE_API_KEY` environment variable)
+  - Grok XAI API key (set as `GROK_API_KEY` environment variable)
 
 ## Installation
 
@@ -39,12 +41,14 @@ This tool provides a simple way to send prompts to different LLM providers and a
    export OPENAI_API_KEY='your-openai-key'
    export ANTHROPIC_API_KEY='your-anthropic-key'
    export GOOGLE_API_KEY='your-google-key'
+   export GROK_API_KEY='your-grok-key'
    ```
 5. (Optional) Create symlinks for frequently used models:
    ```bash
    ln -s lmt lmt-gpt-4
    ln -s lmt lmt-claude-3-opus-20240229
    ln -s lmt lmt-gemini-pro
+   ln -s lmt lmt-grok-1
    ```
 
 ## Usage
@@ -90,11 +94,21 @@ echo "Explain quantum computing in simple terms" | ./lmt gemini-pro
 echo "Explain quantum computing in simple terms" | ./lmt-gemini-pro
 ```
 
+4. Using Grok XAI:
+```bash
+# Using base command
+echo "What are the latest developments in AI?" | ./lmt grok-1
+
+# Using symlink (if created)
+echo "What are the latest developments in AI?" | ./lmt-grok-1
+```
+
 ### Supported Model Names
 
 - OpenAI: `gpt-4`, `gpt-3.5-turbo`, etc.
 - Anthropic: `claude-3-opus-20240229`, `claude-3-sonnet-20240229`, etc.
 - Google: `gemini-pro`, `gemini-pro-vision`, etc.
+- Grok: `grok-1`, etc. (via OpenAI-compatible API at api.x.ai)
 
 ## Output
 
