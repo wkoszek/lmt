@@ -1,7 +1,16 @@
 # LMT (Language Model Tool CLI)
 
-A unified command-line interface for interacting with various language models from OpenAI, Anthropic, Google, and Grok XAI. 
-This tool provides a simple way to send prompts to different LLM providers and automatically logs all interactions.
+LMT is a command-line tool allowing you to call popular LLMs from command line.
+It's meant to be 1 Python script that you can copy around to get the AI
+capability anywhere.
+Right now supported are language models from OpenAI, Anthropic, Google, and Grok XAI. 
+It also has a friendly mode of recording input/output from the models, so
+every interaction with AI is recorded to a separate file that you can 
+check-in to Git or investigate, copy the outputs from etc.
+To make it very easy to use with shells and command completion, you can
+make symlinks to `lmt` and you'll get available LLM models popup during the
+command completion.
+This feature ensures you can dispatch your requests to a known version of the AI model.
 
 ## Features
 
