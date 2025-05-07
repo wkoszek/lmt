@@ -6,7 +6,6 @@
 # that we use the same OpenAI interface for all the models.
 
 import sys
-import json
 import time
 import datetime
 import argparse
@@ -14,12 +13,31 @@ import re
 import os
 from openai import OpenAI
 from anthropic import Anthropic
-import google.generativeai as genai
+from google import generativeai 
 
 # Initialize API clients
 openai_client = OpenAI()
 anthropic_client = Anthropic()
-genai.configure()
+generativeai.configure()
+
+def format_yaml_output(prompt_unindented, output_unindented, provider, model, time_sent_at, time_recv_at):
+    """Format the output as a YAML string with literal style for text."""    
+    prompt = "\n".join([f"    {line.strip()}" for line in prompt_unindented.split("\n")])
+    output = "\n".join([f"    {line.strip()}" for line in output_unindented.split("\n")])
+    yaml_str = f"""sent:
+  time_sent_at: {time_sent_at}
+  prompt: |
+{prompt}
+  provider: {provider}
+  model: {model}
+received:
+  time_recv_at: {time_recv_at}
+  output: |
+{output}
+  provider: {provider}
+  model: {model}
+"""
+    return yaml_str
 
 def call_openai_model(prompt, model):
     """Calls OpenAI API with the given prompt and model."""
@@ -47,7 +65,7 @@ def call_anthropic_model(prompt, model):
 def call_gemini_model(prompt, model):
     """Calls Google's Gemini API with the given prompt and model."""
     start_time = time.time()
-    model = genai.GenerativeModel(model)
+    model = generativeai.GenerativeModel(model)
     response = model.generate_content(prompt)
     output_text = response.text
     end_time = time.time()
@@ -78,80 +96,63 @@ def call_grok_model(prompt, model):
     end_time = time.time()
     return output_text, start_time, end_time
 
-def determine_backend(model):
-    """Determine which backend to use based on the model name."""
-    # OpenAI models
-    if re.match(r'gpt-', model):
-        return call_openai_model
-    # Anthropic models
-    elif re.match(r'claude-', model):
-        return call_anthropic_model
-    # Google models
-    elif re.match(r'gemini-', model):
-        return call_gemini_model
-    # Grok models
-    elif re.match(r'grok-', model):
-        return call_grok_model
-    else:
-        return None
-
 def main():
     parser = argparse.ArgumentParser(description="Unified Language Model CLI")
-    parser.add_argument("model", type=str, nargs="?", help="Model to use (e.g., gpt-4, claude-3-opus-20240229, gemini-pro, grok-1)")
+    parser.add_argument("provider", type=str, choices=['openai', 'anthropic', 'google', 'xai'],
+                      help="LLM provider to use (openai, anthropic, google, xai)")
+    parser.add_argument("model", type=str, help="Model name to use (e.g., gpt-4, claude-3-opus-20240229, gemini-pro, grok-1)")
     args = parser.parse_args()
 
     # Get the program's basename
     program_name = os.path.basename(sys.argv[0])
     
-    # If program name is not "lmt", use it as the model name (removing "lmt-" prefix)
-    if program_name != "lmt":
-        model = program_name.replace("lmt-", "")
-    else:
-        # If program name is "lmt", require the model argument
-        if not args.model:
-            print("Error: Model name must be provided when using 'lmt' command.", file=sys.stderr)
-            sys.exit(1)
-        model = args.model
+    # Map provider to backend function
+    provider_map = {
+        'openai': call_openai_model,
+        'anthropic': call_anthropic_model,
+        'google': call_gemini_model,
+        'xai': call_grok_model
+    }
+    
+    # Check if program name follows lmt-PROVIDER-MODEL pattern
+    if program_name.startswith("lmt-"):
+        parts = program_name.split("-", 2)  # Split into ['lmt', 'provider', 'model']
+        if len(parts) == 3:
+            args.provider = parts[1]
+            args.model = parts[2]
+            # Validate provider
+            if args.provider not in provider_map.keys():
+                print(f"Error: Invalid provider '{args.provider}' in symlink name. Must be one of: openai, anthropic, google, xai", file=sys.stderr)
+                sys.exit(1)
 
-    # Determine which backend to use
-    backend_func = determine_backend(model)
-    if not backend_func:
-        print(f"Error: Unknown model '{model}'. Please use a model from OpenAI (gpt-*), Anthropic (claude-*), Google (gemini-*), or Grok (grok-*).", file=sys.stderr)
-        sys.exit(1)
+    # Get the backend function
+    backend_func = provider_map[args.provider]
 
     # Read input from stdin
-    prompt = sys.stdin.read().strip()
+    prompt = sys.stdin.read()
     if not prompt:
         print("Error: No input provided on STDIN.", file=sys.stderr)
         sys.exit(1)
 
     try:
         # Call the appropriate model
-        output, time_sent_at, time_recv_at = backend_func(prompt, model)
+        output, time_sent_at, time_recv_at = backend_func(prompt, args.model)
 
         # Print output to STDOUT
         print(output)
 
-        # Generate log filename
-        timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        log_filename = f"{timestamp}-{model}.json"
+        # Generate log filename with seconds
+        timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+        log_filename = f"{timestamp}-{args.provider}-{args.model}.yaml"
 
-        # Log data
-        log_data = {
-            "in": {
-                "time_sent_at": time_sent_at,
-                "prompt": prompt,
-                "algo": model
-            },
-            "out": {
-                "time_recv_at": time_recv_at,
-                "output": output,
-                "algo": model
-            }
-        }
+        # Format and write YAML output
+        yaml_output = format_yaml_output(
+            prompt, output, args.provider, args.model,
+            time_sent_at, time_recv_at
+        )
 
         with open(log_filename, "w") as log_file:
-            json.dump(log_data, log_file, indent=4)
+            log_file.write(yaml_output)
 
     except Exception as e:
         print(f"Error: {str(e)}", file=sys.stderr)
