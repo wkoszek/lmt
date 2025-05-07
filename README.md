@@ -122,7 +122,6 @@ received:
   time_recv_at: 1709123457.123
   output: |
     The capital of France is Paris.
-    
     Paris has been France's capital since 987 CE. It is the country's largest city
     and serves as its political, economic, and cultural center. The city is known
     for iconic landmarks like the Eiffel Tower, the Louvre Museum, and the
