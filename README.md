@@ -7,10 +7,6 @@ Right now supported are language models from OpenAI, Anthropic, Google, and Grok
 It also has a friendly mode of recording input/output from the models, so
 every interaction with AI is recorded to a separate file that you can 
 check-in to Git or investigate, copy the outputs from etc.
-To make it very easy to use with shells and command completion, you can
-make symlinks to `lmt` and you'll get available LLM models popup during the
-command completion.
-This feature ensures you can dispatch your requests to a known version of the AI model.
 
 ## Features
 
@@ -19,11 +15,11 @@ This feature ensures you can dispatch your requests to a known version of the AI
   - Anthropic (Claude models)
   - Google (Gemini models)
   - Grok XAI (Grok models, via OpenAI-compatible API)
-- Automatic model detection based on model name
-- JSON logging of all interactions with timestamps
+- Explicit provider selection
+- YAML logging of all interactions with timestamps
 - Simple stdin/stdout interface
 - Error handling and user-friendly messages
-- Convenient symlink-based model selection
+- Symlink support for quick access to specific models
 
 ## Prerequisites
 
@@ -52,45 +48,53 @@ This feature ensures you can dispatch your requests to a known version of the AI
    export GOOGLE_API_KEY='your-google-key'
    export GROK_API_KEY='your-grok-key'
    ```
-5. (Optional) Create symlinks for frequently used models:
-   ```bash
-   ln -s lmt lmt-gpt-4
-   ln -s lmt lmt-claude-3-opus-20240229
-   ln -s lmt lmt-gemini-pro
-   ln -s lmt lmt-grok-1
-   ```
 
 ## Usage
 
-The tool can be used in two ways:
-
-### 1. Using the base command with model argument:
+The basic syntax is:
 ```bash
-echo "Your prompt here" | ./lmt <model-name>
+echo "Your prompt here" | ./lmt <provider> <model-name>
 ```
 
-### 2. Using symlinks (if created):
-```bash
-echo "Your prompt here" | ./lmt-gpt-4
-```
+Where:
+- `<provider>` is one of: `openai`, `anthropic`, `google`, `xai`
+- `<model-name>` is the specific model to use
 
 ### Examples
 
 ```bash
 # OpenAI GPT-4
-echo "What is the capital of France?" | ./lmt gpt-4
+echo "What is the capital of France?" | ./lmt openai gpt-4
 
 # Anthropic Claude
-echo "Write a Python function to calculate fibonacci numbers" | ./lmt claude-3-opus-20240229
+echo "Write a Python function to calculate fibonacci numbers" | ./lmt anthropic claude-3-opus-20240229
 
 # Google Gemini
-echo "Explain quantum computing in simple terms" | ./lmt gemini-pro
+echo "Explain quantum computing in simple terms" | ./lmt google gemini-pro
 
 # Grok XAI
-echo "What are the latest developments in AI?" | ./lmt grok-1
+echo "What are the latest developments in AI?" | ./lmt xai grok-1
 ```
 
-### Supported Model Names
+### Symlink Usage
+
+You can create symlinks to quickly access specific models. The symlink name should follow the pattern `lmt-<provider>-<model>`:
+
+```bash
+# Create symlinks for different models
+ln -s lmt lmt-openai-gpt4
+ln -s lmt lmt-anthropic-claude3
+ln -s lmt lmt-google-gemini
+ln -s lmt lmt-xai-grok1
+
+# Use the symlinks directly
+echo "What is the capital of France?" | ./lmt-openai-gpt4
+echo "Write a Python function" | ./lmt-anthropic-claude3
+echo "Explain quantum computing" | ./lmt-google-gemini
+echo "What's new in AI?" | ./lmt-xai-grok1
+```
+
+### Supported Providers and Models
 
 - OpenAI: `gpt-4`, `gpt-3.5-turbo`, etc.
 - Anthropic: `claude-3-opus-20240229`, `claude-3-sonnet-20240229`, etc.
@@ -99,11 +103,33 @@ echo "What are the latest developments in AI?" | ./lmt grok-1
 
 ## Output
 
-The tool outputs the model's response to stdout and creates a JSON log file with the format `YYYYMMDD-HHMMSS-model.json` containing:
+The tool outputs the model's response to stdout and creates a YAML log file with the format `YYYYMMDD-HHMMSS-ffffff-provider-model.yaml` containing:
 - Input prompt
 - Output response
 - Timestamps for request and response
-- Model used
+- Provider and model used
+
+Example log file format:
+```yaml
+sent:
+  time_sent_at: 1709123456.789
+  prompt: |
+    What is the capital of France?
+    Please provide a brief explanation.
+  provider: openai
+  model: gpt-4
+received:
+  time_recv_at: 1709123457.123
+  output: |
+    The capital of France is Paris.
+    
+    Paris has been France's capital since 987 CE. It is the country's largest city
+    and serves as its political, economic, and cultural center. The city is known
+    for iconic landmarks like the Eiffel Tower, the Louvre Museum, and the
+    Notre-Dame Cathedral.
+  provider: openai
+  model: gpt-4
+```
 
 ## Copyright
 
