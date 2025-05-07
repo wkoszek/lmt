@@ -97,12 +97,6 @@ def call_grok_model(prompt, model):
     return output_text, start_time, end_time
 
 def main():
-    parser = argparse.ArgumentParser(description="Unified Language Model CLI")
-    parser.add_argument("provider", type=str, choices=['openai', 'anthropic', 'google', 'xai'],
-                      help="LLM provider to use (openai, anthropic, google, xai)")
-    parser.add_argument("model", type=str, help="Model name to use (e.g., gpt-4, claude-3-opus-20240229, gemini-pro, grok-1)")
-    args = parser.parse_args()
-
     # Get the program's basename
     program_name = os.path.basename(sys.argv[0])
     
@@ -113,17 +107,25 @@ def main():
         'google': call_gemini_model,
         'xai': call_grok_model
     }
-    
+
     # Check if program name follows lmt-PROVIDER-MODEL pattern
     if program_name.startswith("lmt-"):
-        parts = program_name.split("-", 2)  # Split into ['lmt', 'provider', 'model']
-        if len(parts) == 3:
-            args.provider = parts[1]
-            args.model = parts[2]
+        match = re.match(r'lmt-([^-]+)-(.*)', program_name)
+        if match:
+            provider = match.group(1)
+            model = match.group(2)
             # Validate provider
-            if args.provider not in provider_map.keys():
-                print(f"Error: Invalid provider '{args.provider}' in symlink name. Must be one of: openai, anthropic, google, xai", file=sys.stderr)
+            if provider not in provider_map.keys():
+                print(f"Error: Invalid provider '{provider}' in symlink name. Must be one of: openai, anthropic, google, xai", file=sys.stderr)
                 sys.exit(1)
+            # Create a custom argument list for argparse
+            sys.argv = [sys.argv[0], provider, model]
+    
+    parser = argparse.ArgumentParser(description="Unified Language Model CLI")
+    parser.add_argument("provider", type=str, choices=['openai', 'anthropic', 'google', 'xai'],
+                      help="LLM provider to use (openai, anthropic, google, xai)")
+    parser.add_argument("model", type=str, help="Model name to use (e.g., gpt-4, claude-3-opus-20240229, gemini-pro, grok-1)")
+    args = parser.parse_args()
 
     # Get the backend function
     backend_func = provider_map[args.provider]
